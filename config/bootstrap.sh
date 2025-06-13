@@ -7,27 +7,25 @@ set -euo pipefail
 # update date:      
 # script location:  
 # ************************ 
-# 
+
 ############## Configuration ##############
 VERSION="1.701"
-PARSER_WRAPPER="pdf-parser_wrapper.py"             
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-LOG_DIR="${REPO_ROOT}/logs"
-LOG_FILE="${LOG_DIR}/scan_log.txt"
-DOWNLOADS_DIR="${HOME}/Downloads"
-PREREQS_SCRIPT="${SCRIPT_DIR}/prereqscheck.sh"
-
-# 
-# Directories (ALL now inside the cloned repo root)
-#
-SANITIZER_DIR="${REPO_ROOT}/sanitizer"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"   # <-- one level up from config/
+MODULES_DIR="${SCRIPT_DIR}/modules"
+SANITIZER_DIR="${SCRIPT_DIR}/sanitizer"
 VENV_DIR="${SANITIZER_DIR}/venv"
-MODULES_DIR="${REPO_ROOT}/modules"
-PARANOID_MODE_DIR="${REPO_ROOT}/paranoid_mode"
-QUARANTINE_DIR="${REPO_ROOT}/quarantine"
-
+LOG_DIR="${SCRIPT_DIR}/logs"
+LOG_FILE="${LOG_DIR}/scan_log.txt"
+DOWNLOADS_DIR="${SCRIPT_DIR}/downloads"
+PREREQS_SCRIPT="${SCRIPT_DIR}/config/prereqscheck.sh"
 ############## Configuration-END ##############
+
+# Figure out “real” (non-root) user & home
+if [ -n "${SUDO_USER:-}" ]; then
+  REAL_USER="${SUDO_USER}"
+else
+  REAL_USER="$(whoami)"
+fi
 
 #
 # PHASE 1: Non-Root setup 
@@ -35,19 +33,19 @@ QUARANTINE_DIR="${REPO_ROOT}/quarantine"
 if [ "$EUID" -ne 0 ]; then
     echo "========================================"
     echo "  PDFsec bootstrap v${VERSION} (Phase 1)"
-    echo "  Running as user: $(whoami)"
-    echo "  Repo location:   ${REPO_ROOT}"
+    echo "  Running as user: ${REAL_USER}"
     echo "========================================"
     echo
 
-    # 1) Create main pdfsec directory structure under the repo directory
-    echo "[P1-1] Creating base directories under repo root..."
+    # 1) Create directory structure in project folder
+    echo "[P1-1] Creating base directories under project repo..."
     mkdir -p "${LOG_DIR}"
-    mkdir -p "${QUARANTINE_DIR}"
+    mkdir -p "${SCRIPT_DIR}/quarantine"
     mkdir -p "${MODULES_DIR}"
     mkdir -p "${SANITIZER_DIR}"
-    mkdir -p "${PARANOID_MODE_DIR}"
-    echo "  + Created: {logs,quarantine,modules,sanitizer,paranoid_mode} under repo root"
+    mkdir -p "${SCRIPT_DIR}/paranoid_mode"
+    mkdir -p "${DOWNLOADS_DIR}"        # Optional, so quick_scan works out of the box
+    echo "  + Created: logs, quarantine, modules, sanitizer, paranoid_mode, downloads"
     echo
 
     # [P1-X] Make all scripts in modules/ executable
@@ -67,15 +65,15 @@ if [ "$EUID" -ne 0 ]; then
     fi
     echo
 
-    # 3) Ensure scan_menu.sh and any existing wrappers are executable under modules/
+    # 3) Ensure scan_menu.sh and wrappers are executable
     echo "[P1-3] Marking existing scripts executable..."
-    if [ -f "${REPO_ROOT}/scan_menu.sh" ]; then
-        chmod u+x "${REPO_ROOT}/scan_menu.sh"
+    if [ -f "${SCRIPT_DIR}/scan_menu.sh" ]; then
+        chmod u+x "${SCRIPT_DIR}/scan_menu.sh"
         echo "  + chmod +x scan_menu.sh"
     fi
-    if [ -f "${MODULES_DIR}/pdf-parser_wrapper.py" ]; then
-        chmod u+x "${MODULES_DIR}/pdf-parser_wrapper.py"
-        echo "  + chmod +x pdf-parser_wrapper.py"
+    if [ -f "${SANITIZER_DIR}/pdf_sanitizer.py" ]; then
+        chmod u+x "${SANITIZER_DIR}/pdf_sanitizer.py"
+        echo "  + chmod +x pdf_sanitizer.py"
     fi
     echo
 
@@ -103,7 +101,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 #
-# ** Phase 2: root actions (apt installs, etc.) **
+# Phase 2: root actions (apt installs, etc.)
 #
 
 clear
@@ -142,7 +140,6 @@ apt install -y \
     poppler-utils \
     qpdf \
     pdfgrep \
-    poppler-utils \
     pev \
     tcpdump \
     auditd \
@@ -150,10 +147,8 @@ apt install -y \
     libjpeg-dev \
     libmupdf-dev \
     yara \
-    zlib1g-dev 
-
-# UPDATE: 1.901_MENU5 - Paranoid mode dependencies (inotify-tools for file monitoring)
-apt install -y inotify-tools
+    zlib1g-dev \
+    inotify-tools
 
 # 3) Install Python 3 + pip + venv components
 clear
@@ -186,6 +181,6 @@ clear
 echo
 echo "[5] PDFsec - bootstrap steps done. You can now run **scan_menu.sh** as your regular user."
 echo "     - All system packages have been installed."
-echo "     - Your venv and modules are already in place under repo root."
+echo "     - Your venv and modules are already in place under ${SANITIZER_DIR}."
 echo
 exit 0

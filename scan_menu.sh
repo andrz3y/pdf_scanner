@@ -5,10 +5,8 @@
 #
 # ***********************
 # PDFSec main menu - bash
-#  
-# 
 # *********************** 
-# 
+#
 #!/usr/bin/env bash
 set -euo pipefail
 #
@@ -27,7 +25,6 @@ BOOTSTR_SCRIPT="${SCRIPT_DIR}/config/bootstrap.sh"
 #
 # LOGGING 
 #
-# - unified timestamps 
 write_log() {
     local WHEN
     WHEN=$(date '+%Y-%m-%d %H:%M:%S')
@@ -43,15 +40,14 @@ write_log() {
 check_prereqs() {
     local missing=()
 
-    # Define a small list of required commands/binaries.
-    # If any is missing, collect it in “missing[]” for reporting.
+    # Required commands/binaries
     for cmd in clamscan pdfinfo pdfdetach pdfgrep qpdf firejail tcpdump auditctl python3; do
         if ! command -v "$cmd" &>/dev/null; then
             missing+=("$cmd")
         fi
     done
 
-    # Also check for “sanitizer/venv/bin/python” existence:
+    # Check for sanitizer venv (relative path)
     if [[ ! -x "${SANITIZER_DIR}/venv/bin/python" ]]; then
         missing+=("sanitizer-venv")
     fi

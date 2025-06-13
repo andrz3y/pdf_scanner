@@ -2,10 +2,14 @@
 
 PDFSec written to check safery of PDF files downloaded from, well, anywhere. 
 
+I do have dedicated download VM but if moving PDFs to any other machine I always check them for security reasons...
+
 
 # First Run 
 
 Before first run API keys are required for : 
+- `https://www.virustotal.com/api/v3/analyses` as: `VT_API_KEY`
+- `https://opentip.kaspersky.com/api/v1/scan/file` as `KASPERSKY_API_KEY`
 
 
 Scribt written for Ubuntu, so download zipped project, run bootstrap script: `sudo bash bootstrap.sh`. 

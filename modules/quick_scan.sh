@@ -21,16 +21,14 @@ set -euo pipefail
 #   + pev           detect encrypted/password‐protected PDFs
 #   + pdfgrep       look for /JavaScript, /JS, /Launch, /OpenAction,  
 # ******************************************************************
-#
-# Configuration
-#
 
+# All paths relative to repo root (one level above modules)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DOWNLOADS_DIR="${SCRIPT_DIR}/downloads"
+LOG_DIR="${SCRIPT_DIR}/logs"
 PDFSEC_DIR="${SCRIPT_DIR}"
-LOG_DIR="${PDFSEC_DIR}/logs"
 SCAN_LOG="${LOG_DIR}/pdfsec.log"
-QUARANTINE_DIR="${PDFSEC_DIR}/quarantine"
+QUARANTINE_DIR="${SCRIPT_DIR}/quarantine"
 MODULE_NAME="quick_scan"
 
 # Ensure log and quarantine directories exist
@@ -183,6 +181,7 @@ scan_file() {
 
     echo     
 }
+
 #
 # MAIN 
 #

@@ -6,53 +6,31 @@
 # version:          1.801
 # *******************************************************************
 # This script uses free API connections to VIRUSTOTAL.com & KASPERSKY
-#
-# Still to be implemented: 
-#
-# https://www.virustotal.com/api/v3
-#   - https://docs.virustotal.com/reference/overview
-# https://opentip.kaspersky.com
-# https://hunting.abuse.ch/api
-# https://www.opswat.com/api
-# https://scan.tylabs.com/api
-# https://www.hybrid-analysis.com/api
-#
-# ─────────────────────────────
-# NO HARDCODED PATHS!
-# ─────────────────────────────
-#
-# IMPORTS 
-#
+# *******************************************************************
+
 import os
 import time
 import requests
 from pathlib import Path
 from datetime import datetime
 import json
+import sys
 
-# ─────────────────────────────
-# CONFIGURATION  
-# ─────────────────────────────
+# ─────────── PATHS (RELATIVE TO SCRIPT DIR) ─────────────
+SCRIPT_DIR = Path(__file__).resolve().parent.parent
+LOG_FILE = SCRIPT_DIR / "logs" / "pdfsec.log"
+DOWNLOADS_DIR = SCRIPT_DIR / "downloads"
+SANITIZED_DIR = SCRIPT_DIR / "sanitizer" / "sanitized"
 
-# Everything is relative to where this script is
-BASE_DIR = Path(__file__).parent.parent.resolve()
-LOG_FILE = BASE_DIR / "logs" / "pdfsec.log"
-DOWNLOADS_DIR = BASE_DIR / "downloads"
-SANITIZED_DIR = BASE_DIR / "sanitized"
-
-VT_UPLOAD_URL       = "https://www.virustotal.com/api/v3/files"
-VT_ANALYSIS_URL     = "https://www.virustotal.com/api/v3/analyses"
-VT_API_KEY          = "8b9f7d62fc7adf82d505720b5388ed3e282c009f07130845045331e8dc25204c"
-
-KASPERSKY_SCAN_URL  = "https://opentip.kaspersky.com/api/v1/scan/file"
+# API KEYS (replace with your real keys or prompt for them)
+VT_UPLOAD_URL = "https://www.virustotal.com/api/v3/files"
+VT_ANALYSIS_URL = "https://www.virustotal.com/api/v3/analyses"
+VT_API_KEY = "8b9f7d62fc7adf82d505720b5388ed3e282c009f07130845045331e8dc25204c"
+KASPERSKY_SCAN_URL = "https://opentip.kaspersky.com/api/v1/scan/file"
 KASPERSKY_RESULT_URL = "https://opentip.kaspersky.com/api/v1/getresult/file"
-KASPERSKY_API_KEY   = "Z/ZQDh6WSy+ujZ7SuYT6rQ=="   
+KASPERSKY_API_KEY = "Z/ZQDh6WSy+ujZ7SuYT6rQ=="
 
-
-# ─────────────────────────────
-# FUNCTIONS   
-# ─────────────────────────────
-
+# ────────────── LOGGING ──────────────
 def timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -61,9 +39,9 @@ def write_log(module, message):
     with open(LOG_FILE, "a") as lf:
         lf.write(f"{timestamp()} | {module} | {message}\n")
 
+# ────────────── PDF FINDER ──────────────
 def list_pdfs():
-    # Find PDFs in downloads/ and sanitized/ (relative to project)
-    files = sorted(DOWNLOADS_DIR.glob("*.pdf")) if DOWNLOADS_DIR.exists() else []
+    files = sorted(DOWNLOADS_DIR.glob("*.pdf"))
     if SANITIZED_DIR.exists():
         files += sorted(SANITIZED_DIR.glob("*.pdf"))
     return files
@@ -88,8 +66,7 @@ def choose_pdf(pdf_list):
             return pdf_list[int(choice) - 1]
         print("  → Invalid selection, try again.")
 
- 
-# VirusTotal Functions
+# ─────────── VIRUSTOTAL ───────────
 def upload_to_virustotal(pdf_path, api_key):
     headers = {"accept": "application/json", "x-apikey": api_key}
     with open(pdf_path, "rb") as f:
@@ -113,13 +90,8 @@ def poll_analysis(analysis_id, api_key):
         print("  • Still scanning VirusTotal… sleeping 5 sec")
         time.sleep(5)
 
-
-# Kaspersky Functions
+# ─────────── KASPERSKY ───────────
 def upload_to_kaspersky(pdf_path, api_key):
-    """
-    Send a file to Kaspersky for basic sandbox analysis.
-    Returns the JSON response (basic report).
-    """
     url = f"{KASPERSKY_SCAN_URL}?filename={pdf_path.name}"
     headers = {
         "x-api-key": api_key,
@@ -132,10 +104,6 @@ def upload_to_kaspersky(pdf_path, api_key):
     return resp.json()
 
 def poll_kaspersky(file_hash, api_key):
-    """
-    Poll Kaspersky's getresult endpoint until FileStatus is 'complete'.
-    Returns the final JSON report.
-    """
     url = f"{KASPERSKY_RESULT_URL}?request={file_hash}"
     headers = {"x-api-key": api_key}
     while True:
@@ -149,14 +117,13 @@ def poll_kaspersky(file_hash, api_key):
         print("  • Still scanning Kaspersky… sleeping 5 sec")
         time.sleep(5)
 
+# ─────────── MAIN FUNCTION ───────────
 def main():
-    # 1) list all PDFs under downloads/ and sanitized/
     pdfs = list_pdfs()
     if not pdfs:
-        print("No PDFs found in downloads/ or sanitized/.")
+        print("No PDFs found in downloads or sanitized.")
         return
 
-    # 2) let user pick one (or cancel)
     chosen = choose_pdf(pdfs)
     if chosen is None:
         print("Cancelled.")
@@ -165,14 +132,13 @@ def main():
     print(f"\nSelected: {chosen}\n")
     write_log("api_caller", f"Chosen {chosen.name}")
 
-    # 3) use the hard‐coded VT key
     vt_key = VT_API_KEY.strip()
     if not vt_key:
         print("Error: no VirusTotal API key configured; aborting.")
         write_log("api_caller", "No VT API key provided.")
         return
 
-    # 4) Upload to VirusTotal
+    # VirusTotal
     try:
         print("Uploading to VirusTotal…")
         write_log("api_caller", f"Uploading {chosen.name} to VT")
@@ -181,7 +147,6 @@ def main():
             raise RuntimeError("No analysis_id returned from VT.")
         print(f"Upload accepted by VT, analysis ID = {analysis_id}\n")
         write_log("api_caller", f"Received VT analysis_id={analysis_id}")
-
         print("Polling VirusTotal (may take ~20–30 sec)…")
         vt_stats = poll_analysis(analysis_id, vt_key)
     except Exception as e:
@@ -189,7 +154,7 @@ def main():
         write_log("api_caller", f"Error during VT upload/poll: {e}")
         vt_stats = None
 
-    # 5) Upload to Kaspersky
+    # Kaspersky
     kasp_key = KASPERSKY_API_KEY.strip()
     if not kasp_key:
         print("Error: no Kaspersky API key configured; skipping Kaspersky scan.")
@@ -202,10 +167,8 @@ def main():
             kasp_data = upload_to_kaspersky(chosen, kasp_key)
             write_log("api_caller", f"Kaspersky basic response: {json.dumps(kasp_data)}")
 
-            # Check if analysis is already complete
             status = kasp_data.get("FileStatus", "").lower()
             if status != "complete":
-                # Need to poll for full results
                 file_info = kasp_data.get("FileGeneralInfo", {})
                 file_hash = file_info.get("SHA256") or file_info.get("SHA1") or file_info.get("MD5")
                 if not file_hash:
@@ -220,7 +183,7 @@ def main():
             write_log("api_caller", f"Error during Kaspersky upload/poll: {e}")
             kasp_stats = None
 
-    # 6) Present VirusTotal results (if available)
+    # Present VirusTotal results (if available)
     if vt_stats is not None:
         harmless   = vt_stats.get("harmless", 0)
         malicious  = vt_stats.get("malicious", 0)
@@ -243,7 +206,7 @@ def main():
         )
         write_log("vt_api", log_msg)
 
-    # 7) Present Kaspersky results (if available)
+    # Present Kaspersky results (if available)
     if kasp_stats is not None:
         zone = kasp_stats.get("Zone", "<unknown>")
         file_status = kasp_stats.get("FileStatus", "<unknown>")
@@ -252,7 +215,6 @@ def main():
         print("Kaspersky Results:")
         print(f"  • Zone       : {zone}")
         print(f"  • Status     : {file_status}")
-        # Optionally print hashes if present
         md5    = general_info.get("MD5")
         sha1   = general_info.get("SHA1")
         sha256 = general_info.get("SHA256")
@@ -271,7 +233,6 @@ def main():
             print(f"  • File Type  : {ftype}")
         print()
 
-        # Determine a simple verdict based on Zone
         if zone.lower() == "red":
             verdict2 = "MALICIOUS"
         elif zone.lower() == "yellow":
