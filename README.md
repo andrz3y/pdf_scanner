@@ -12,7 +12,11 @@ Before first run API keys are required for :
 - `https://opentip.kaspersky.com/api/v1/scan/file` as `KASPERSKY_API_KEY`
 
 
-Scribt written for Ubuntu, so download zipped project, run bootstrap script: `sudo bash bootstrap.sh`. 
+Scribt written for Ubuntu, so download zipped project, 
+
+Run bootstrap script as normal user first: `bash config/bootstrap.sh `. 
+
+Then Run boostrap as roo:   `sudo bash config/bootstrap.sh`
 
 Bash Menu script provides following options: 
 
