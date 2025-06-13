@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
 # ************************ 
 # PDFSEC bootstrap script 
 # ************************ 
@@ -6,34 +8,25 @@
 # script location:  
 # ************************ 
 # 
-#!/usr/bin/env bash
-set -euo pipefail
-#
 ############## Configuration ##############
 VERSION="1.701"
 PARSER_WRAPPER="pdf-parser_wrapper.py"             
-LOG_DIR="${HOME}/pdfsec"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+LOG_DIR="${REPO_ROOT}/logs"
 LOG_FILE="${LOG_DIR}/scan_log.txt"
 DOWNLOADS_DIR="${HOME}/Downloads"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PREREQS_SCRIPT="${SCRIPT_DIR}/../config/prereqscheck.sh"
+PREREQS_SCRIPT="${SCRIPT_DIR}/prereqscheck.sh"
 
+# 
+# Directories (ALL now inside the cloned repo root)
 #
-# Figure out “real” (non-root) user & home, even though we’ll run most of this script as root.
-#
-if [ -n "${SUDO_USER:-}" ]; then
-  REAL_USER="${SUDO_USER}"
-else
-  REAL_USER="$(whoami)"
-fi
-REAL_HOME="$(eval echo "~${REAL_USER}")"
-
-#
-# Redirect the SANITIZER_DIR into the real user’s home, not /root
-#
-SANITIZER_DIR="${REAL_HOME}/pdfsec/sanitizer"
+SANITIZER_DIR="${REPO_ROOT}/sanitizer"
 VENV_DIR="${SANITIZER_DIR}/venv"
-MODULES_DIR="${REAL_HOME}/pdfsec/modules"
+MODULES_DIR="${REPO_ROOT}/modules"
+PARANOID_MODE_DIR="${REPO_ROOT}/paranoid_mode"
+QUARANTINE_DIR="${REPO_ROOT}/quarantine"
+
 ############## Configuration-END ##############
 
 #
@@ -42,21 +35,19 @@ MODULES_DIR="${REAL_HOME}/pdfsec/modules"
 if [ "$EUID" -ne 0 ]; then
     echo "========================================"
     echo "  PDFsec bootstrap v${VERSION} (Phase 1)"
-    echo "  Running as user: ${REAL_USER}"
+    echo "  Running as user: $(whoami)"
+    echo "  Repo location:   ${REPO_ROOT}"
     echo "========================================"
     echo
 
-    # 1) Create main pdfsec directory structure under real user’s home
-    echo "[P1-1] Creating base directories under ${REAL_HOME}/pdfsec..."
-    mkdir -p "${REAL_HOME}/pdfsec/logs"
-    mkdir -p "${REAL_HOME}/pdfsec/quarantine"
+    # 1) Create main pdfsec directory structure under the repo directory
+    echo "[P1-1] Creating base directories under repo root..."
+    mkdir -p "${LOG_DIR}"
+    mkdir -p "${QUARANTINE_DIR}"
     mkdir -p "${MODULES_DIR}"
     mkdir -p "${SANITIZER_DIR}"
-    echo "  + Created: ${REAL_HOME}/pdfsec/{logs,quarantine,modules,sanitizer}"
-    echo
-    # UPDATE: 1.901_MENU5 - Add paranoid_mode directory for Paranoid Mode logs
-    mkdir -p "${REAL_HOME}/pdfsec/paranoid_mode"
-    echo "  + Created: ${REAL_HOME}/pdfsec/{logs,quarantine,modules,sanitizer,paranoid_mode}"
+    mkdir -p "${PARANOID_MODE_DIR}"
+    echo "  + Created: {logs,quarantine,modules,sanitizer,paranoid_mode} under repo root"
     echo
 
     # [P1-X] Make all scripts in modules/ executable
@@ -68,8 +59,8 @@ if [ "$EUID" -ne 0 ]; then
     # 2) Download fresh pdf-parser.py into modules/
     echo "[P1-2] Downloading latest pdf-parser.py into modules/..."
     if [ ! -f "${MODULES_DIR}/pdf-parser.py" ]; then
-        sudo -u "${REAL_USER}" bash -c "curl -sSL 'https://raw.githubusercontent.com/DidierStevens/DidierStevensSuite/master/pdf-parser.py' -o '${MODULES_DIR}/pdf-parser.py'"
-        sudo -u "${REAL_USER}" chmod +x "${MODULES_DIR}/pdf-parser.py"
+        curl -sSL 'https://raw.githubusercontent.com/DidierStevens/DidierStevensSuite/master/pdf-parser.py' -o "${MODULES_DIR}/pdf-parser.py"
+        chmod +x "${MODULES_DIR}/pdf-parser.py"
         echo "  + Downloaded and chmod +x: ${MODULES_DIR}/pdf-parser.py"
     else
         echo "  + pdf-parser.py already exists; skipping download."
@@ -78,8 +69,8 @@ if [ "$EUID" -ne 0 ]; then
 
     # 3) Ensure scan_menu.sh and any existing wrappers are executable under modules/
     echo "[P1-3] Marking existing scripts executable..."
-    if [ -f "${SCRIPT_DIR}/scan_menu.sh" ]; then
-        chmod u+x "${SCRIPT_DIR}/scan_menu.sh"
+    if [ -f "${REPO_ROOT}/scan_menu.sh" ]; then
+        chmod u+x "${REPO_ROOT}/scan_menu.sh"
         echo "  + chmod +x scan_menu.sh"
     fi
     if [ -f "${MODULES_DIR}/pdf-parser_wrapper.py" ]; then
@@ -88,26 +79,19 @@ if [ "$EUID" -ne 0 ]; then
     fi
     echo
 
-    # 4) Create Python3 venv under sanitizer/ (as REAL_USER)
+    # 4) Create Python3 venv under sanitizer/
     echo "[P1-4] Creating Python3 venv under sanitizer/..."
-    sudo -u "${REAL_USER}" bash <<EOF
-      set -e
-      python3 -m venv "${VENV_DIR}"
-      echo "  + Virtualenv created at: ${VENV_DIR}"
-EOF
+    python3 -m venv "${VENV_DIR}"
+    echo "  + Virtualenv created at: ${VENV_DIR}"
     echo
 
-    # 5) Activate venv and install Python packages (as REAL_USER)
+    # 5) Activate venv and install Python packages
     echo "[P1-5] Activating venv and installing Python packages..."
-    sudo -u "${REAL_USER}" bash <<'EOF'
-      set +e
-      source "${VENV_DIR}/bin/activate"
-      pip install --upgrade pip setuptools
-      pip install PyMuPDF img2pdf Pillow peepdf
-      deactivate
-      set -e
-      echo "  + Installed: PyMuPDF, img2pdf, Pillow, peepdf"
-EOF
+    source "${VENV_DIR}/bin/activate"
+    pip install --upgrade pip setuptools
+    pip install PyMuPDF img2pdf Pillow peepdf
+    deactivate
+    echo "  + Installed: PyMuPDF, img2pdf, Pillow, peepdf"
     echo
 
     # 6) Phase 1 complete
@@ -171,8 +155,6 @@ apt install -y \
 # UPDATE: 1.901_MENU5 - Paranoid mode dependencies (inotify-tools for file monitoring)
 apt install -y inotify-tools
 
-
-
 # 3) Install Python 3 + pip + venv components
 clear
 echo
@@ -204,6 +186,6 @@ clear
 echo
 echo "[5] PDFsec - bootstrap steps done. You can now run **scan_menu.sh** as your regular user."
 echo "     - All system packages have been installed."
-echo "     - Your venv and modules are already in place under ${REAL_HOME}/pdfsec."
+echo "     - Your venv and modules are already in place under repo root."
 echo
 exit 0

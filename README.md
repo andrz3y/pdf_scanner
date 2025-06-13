@@ -5,6 +5,9 @@ PDFSec written to check safery of PDF files downloaded from, well, anywhere.
 
 # First Run 
 
+Before first run API keys are required for : 
+
+
 Scribt written for Ubuntu, so download zipped project, run bootstrap script: `sudo bash bootstrap.sh`. 
 
 Bash Menu script provides following options: 

@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # ************************ 
-# PDFSEC    quick_scan.py  
+# PDFSEC    quick_scan.sh  
 # ************************ 
 # version:          1.701
 # last update:      
 # 1.700_sanitizer working
-# 1.600_manu 0,1,2 working 
+# 1.600_menu 0,1,2 working 
 # 1.502_bootstrap with virt venv done 
 # 1.502_modules/quick_scan ubuntu based scan done 
 # ***********************************************
 # quick_scan.sh
-# unified log: ~/pdfsec/pdfsec.log
+# unified log: ./logs/pdfsec.log
 # ********************************
-# “quick scan” for every PDF in ~/Downloads:
+# “quick scan” for every PDF in ./downloads:
 #   + ClamAV        detect executables/infected
 #   + pdftotext     search for auto‐trigger keywords like java, 
 #   + exiftool      check “Producer” for suspicious PDF generation tools
@@ -24,14 +24,17 @@ set -euo pipefail
 #
 # Configuration
 #
-DOWNLOADS_DIR="${HOME}/Downloads"
-PDFSEC_DIR="${HOME}/pdfsec"
-SCAN_LOG="${PDFSEC_DIR}/logs/pdfsec.log"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DOWNLOADS_DIR="${SCRIPT_DIR}/downloads"
+PDFSEC_DIR="${SCRIPT_DIR}"
+LOG_DIR="${PDFSEC_DIR}/logs"
+SCAN_LOG="${LOG_DIR}/pdfsec.log"
 QUARANTINE_DIR="${PDFSEC_DIR}/quarantine"
 MODULE_NAME="quick_scan"
 
 # Ensure log and quarantine directories exist
-mkdir -p "${PDFSEC_DIR}"
+mkdir -p "${LOG_DIR}"
 mkdir -p "${QUARANTINE_DIR}"
 touch "${SCAN_LOG}"
 

@@ -18,15 +18,7 @@
 # https://www.hybrid-analysis.com/api
 #
 # ─────────────────────────────
-# MANUAL SUBDIR CREATION:
-#  
-# mkdir -p ~/pdfsec/sanitizer
-# python3 -m venv ~/pdfsec/sanitizer/venv
-# source ~/pdfsec/sanitizer/venv/bin/activate
-# pip install PyMuPDF img2pdf
-# pip install PyMuPDF img2pdf Pillow peepdf
-# deactivate
-# 
+# NO HARDCODED PATHS!
 # ─────────────────────────────
 #
 # IMPORTS 
@@ -39,10 +31,14 @@ from datetime import datetime
 import json
 
 # ─────────────────────────────
-#
 # CONFIGURATION  
-#
 # ─────────────────────────────
+
+# Everything is relative to where this script is
+BASE_DIR = Path(__file__).parent.parent.resolve()
+LOG_FILE = BASE_DIR / "logs" / "pdfsec.log"
+DOWNLOADS_DIR = BASE_DIR / "downloads"
+SANITIZED_DIR = BASE_DIR / "sanitized"
 
 VT_UPLOAD_URL       = "https://www.virustotal.com/api/v3/files"
 VT_ANALYSIS_URL     = "https://www.virustotal.com/api/v3/analyses"
@@ -52,44 +48,32 @@ KASPERSKY_SCAN_URL  = "https://opentip.kaspersky.com/api/v1/scan/file"
 KASPERSKY_RESULT_URL = "https://opentip.kaspersky.com/api/v1/getresult/file"
 KASPERSKY_API_KEY   = "Z/ZQDh6WSy+ujZ7SuYT6rQ=="   
 
-LOG_FILE            = Path.home() / "pdfsec" / "logs" / "pdfsec.log"
-DOWNLOADS_DIR       = Path.home() / "Downloads"
-SANITIZED_DIR       = Path.home() / "pdfsec" / "sanitized"
 
 # ─────────────────────────────
-#
 # FUNCTIONS   
-#
 # ─────────────────────────────
 
-# log timestamp  
 def timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-# log write 
 def write_log(module, message):
     LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(LOG_FILE, "a") as lf:
         lf.write(f"{timestamp()} | {module} | {message}\n")
 
-# look for pdf files in ./downloads & ./sanitized folders using pathlib 
 def list_pdfs():
-    # create list of 'files' from downloads 
-    files = sorted(DOWNLOADS_DIR.glob("*.pdf"))
+    # Find PDFs in downloads/ and sanitized/ (relative to project)
+    files = sorted(DOWNLOADS_DIR.glob("*.pdf")) if DOWNLOADS_DIR.exists() else []
     if SANITIZED_DIR.exists():
-        # append with files from santized folder
         files += sorted(SANITIZED_DIR.glob("*.pdf"))
     return files
 
-# add file size to each file 
 def human_readable_size(num_bytes):
-    # EXPLAIN THIS WHAT EXACTLY THIS FUNCTION DO: 
     for unit in ['B','KB','MB','GB','TB']:
         if num_bytes < 1024.0 or unit == 'TB':
             return f"{num_bytes:.1f} {unit}"
         num_bytes /= 1024.0
 
-# pdf chooser
 def choose_pdf(pdf_list):
     print("\nAvailable PDFs:\n")
     for idx, p in enumerate(pdf_list, start=1):
@@ -165,17 +149,11 @@ def poll_kaspersky(file_hash, api_key):
         print("  • Still scanning Kaspersky… sleeping 5 sec")
         time.sleep(5)
 
-# ─────────────────────────────
-#
-# FUNCTIONS   
-#
-# ─────────────────────────────
-
 def main():
-    # 1) list all PDFs under Downloads and sanitized (if any)
+    # 1) list all PDFs under downloads/ and sanitized/
     pdfs = list_pdfs()
     if not pdfs:
-        print("No PDFs found in Downloads or sanitized.")
+        print("No PDFs found in downloads/ or sanitized/.")
         return
 
     # 2) let user pick one (or cancel)

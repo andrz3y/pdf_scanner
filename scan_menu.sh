@@ -15,10 +15,13 @@ set -euo pipefail
 # CONFIG 
 #
 VERSION="1.801"
-LOG_DIR="${HOME}/pdfsec/logs"
-LOG_FILE="${LOG_DIR}/pdfsec.log"
-DOWNLOADS_DIR="${HOME}/Downloads"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_DIR="${SCRIPT_DIR}/logs"
+LOG_FILE="${LOG_DIR}/pdfsec.log"
+DOWNLOADS_DIR="${SCRIPT_DIR}/downloads"
+MODULES_DIR="${SCRIPT_DIR}/modules"
+SANITIZER_DIR="${SCRIPT_DIR}/sanitizer"
 BOOTSTR_SCRIPT="${SCRIPT_DIR}/config/bootstrap.sh"
 
 #
@@ -30,11 +33,12 @@ write_log() {
     WHEN=$(date '+%Y-%m-%d %H:%M:%S')
     local MODULE="$1"
     local MESSAGE="$2"
+    mkdir -p "${LOG_DIR}"
     echo "${WHEN} | ${MODULE} | ${MESSAGE}" >> "${LOG_FILE}"
 }
 
 # 
-# PRERECS CHECKER 
+# PREREQS CHECKER 
 #
 check_prereqs() {
     local missing=()
@@ -48,7 +52,7 @@ check_prereqs() {
     done
 
     # Also check for “sanitizer/venv/bin/python” existence:
-    if [[ ! -x "${SCRIPT_DIR}/sanitizer/venv/bin/python" ]]; then
+    if [[ ! -x "${SANITIZER_DIR}/venv/bin/python" ]]; then
         missing+=("sanitizer-venv")
     fi
 
@@ -57,7 +61,7 @@ check_prereqs() {
         echo "Missing prerequisites detected:"
         for m in "${missing[@]}"; do
             if [[ "$m" == "sanitizer-venv" ]]; then
-                echo "  • sanitizer virtualenv (sanitizer/venv) not found"
+                echo "  • sanitizer virtualenv (${SANITIZER_DIR}/venv) not found"
             else
                 echo "  • $m"
             fi
@@ -94,7 +98,7 @@ while true; do
     echo "  2) Detailed PDF-parser wrapper"
     echo "  3) Sanitize a PDF (rasterize pages)"
     echo "  4) API caller (virustotal + tylabs + kaspersky)"
-    echo "  5) Paranoid‐mode: promtp for snapshot + open PDF with live monitoring"
+    echo "  5) Paranoid‐mode: prompt for snapshot + open PDF with live monitoring"
     echo "  q) Quit"
     echo
     read -rp "Selection: " choice
@@ -125,7 +129,7 @@ while true; do
             echo
 
             # Call quick_scan module  
-            "${SCRIPT_DIR}/modules/quick_scan.sh" 2>&1 | tee -a "${LOG_FILE}"
+            "${MODULES_DIR}/quick_scan.sh" 2>&1 | tee -a "${LOG_FILE}"
 
             write_log "scan_menu" "Quick scan completed"
             echo
@@ -162,13 +166,13 @@ while true; do
                 write_log "pdf_parser" "Full dump of $pdf"
 
                 # 1) Append full pdf-parser.py dump to the unified log
-                python3 "${SCRIPT_DIR}/modules/pdf-parser.py" "$pdf" >> "${LOG_DIR}/pdfsec_parser.log" 2>&1
+                python3 "${MODULES_DIR}/pdf-parser.py" "$pdf" >> "${LOG_DIR}/pdfsec_parser.log" 2>&1
 
                 # 2) Search each keyword via --searchstream
                 found=()
                 for kw in "${KEYWORDS[@]}"; do
                     # If any output is printed, that keyword exists in a stream
-                    if python3 "${SCRIPT_DIR}/modules/pdf-parser.py" --searchstream "$kw" "$pdf" 2>/dev/null | grep -q .; then
+                    if python3 "${MODULES_DIR}/pdf-parser.py" --searchstream "$kw" "$pdf" 2>/dev/null | grep -q .; then
                         found+=("$kw")
                     fi
                 done
@@ -212,8 +216,8 @@ while true; do
             echo "Sanitizing $pdf_to_sanitize …"
             write_log "sanitizer" "Sanitizing $pdf_to_sanitize"
             (
-              source "${SCRIPT_DIR}/sanitizer/venv/bin/activate"
-              python3 "${SCRIPT_DIR}/sanitizer/pdf_sanitizer.py" "$pdf_to_sanitize"
+              source "${SANITIZER_DIR}/venv/bin/activate"
+              python3 "${SANITIZER_DIR}/pdf_sanitizer.py" "$pdf_to_sanitize"
             )
             write_log "sanitizer" "Finished sanitizing $pdf_to_sanitize"
             echo "Done. Sanitized PDF placed in your chosen output folder."
@@ -223,7 +227,7 @@ while true; do
             echo
             write_log "scan_menu" "Starting API caller mode"
             echo
-            "${SCRIPT_DIR}/modules/api_caller.py"
+            python3 "${MODULES_DIR}/api_caller.py"
             write_log "scan_menu" "API caller completed"
             read -rp "Press Enter to return to main menu…" _dummy
             ;;
@@ -276,12 +280,11 @@ while true; do
 
             echo
             echo "Select a PDF to open in Paranoid Mode:"
-            PDF_DIR="${HOME}/Downloads"
             shopt -s nullglob
-            pdf_files=("$PDF_DIR"/*.pdf)
+            pdf_files=("${DOWNLOADS_DIR}"/*.pdf)
             shopt -u nullglob
             if [ ${#pdf_files[@]} -eq 0 ]; then
-                echo "No PDF files found in ${PDF_DIR}."
+                echo "No PDF files found in ${DOWNLOADS_DIR}."
                 read -rp "Press Enter to return to main menu…" _dummy
                 continue
             fi
@@ -296,7 +299,7 @@ while true; do
             pdf_base="$(basename "$pdf_file")"
             pdf_short="${pdf_base%.pdf}"
             session_ts="$(date +%Y%m%d_%H%M%S)"
-            paranoid_dir="${HOME}/pdfsec/paranoid_mode/plogs___${pdf_short}_${session_ts}"
+            paranoid_dir="${SCRIPT_DIR}/paranoid_mode/plogs___${pdf_short}_${session_ts}"
             mkdir -p "$paranoid_dir"
 
             write_log "scan_menu" "Paranoid-mode session starting for $pdf_base ($paranoid_dir)"
@@ -311,7 +314,7 @@ while true; do
             tcpdump_pid=$!
 
             # Filesystem watcher as root 
-            inotifywait -mr /home/"$USER" --exclude '^/home/' -o "$paranoid_dir/fs_changes.log" > /dev/null 2>&1 &
+            inotifywait -mr "${SCRIPT_DIR}" --exclude '^'"${SCRIPT_DIR}" -o "$paranoid_dir/fs_changes.log" > /dev/null 2>&1 &
             inotify_pid=$!
 
             proc_snapshot_file="$paranoid_dir/proc_snapshot_${pdf_short}.log"

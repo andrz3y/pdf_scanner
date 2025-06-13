@@ -17,16 +17,7 @@
 # *************************************************************
 #
 # ─────────────────────────────
-# MANUAL SUBDIR CREATION:
-#
-#  
-# mkdir -p ~/pdfsec/sanitizer
-# python3 -m venv ~/pdfsec/sanitizer/venv
-# source ~/pdfsec/sanitizer/venv/bin/activate
-# pip install PyMuPDF img2pdf
-# pip install PyMuPDF img2pdf Pillow peepdf
-# deactivate
-# 
+# NO HARDCODED PATHS – everything is relative to where you run it!
 # ─────────────────────────────
 #
 # IMPORTS
@@ -46,7 +37,7 @@ if len(sys.argv) != 2:
     print("Usage: pdf_sanitizer.py <input_pdf>")
     sys.exit(1)
 
-input_path = Path(sys.argv[1])
+input_path = Path(sys.argv[1]).resolve()
 
 if not input_path.is_file():
     print(f"Invalid filename: {input_path}")
