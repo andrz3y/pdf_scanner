@@ -42,9 +42,9 @@ if [ "$EUID" -ne 0 ]; then
     mkdir -p "${LOG_DIR}"
     mkdir -p "${SCRIPT_DIR}/quarantine"
     mkdir -p "${MODULES_DIR}"
-    mkdir -p "${SANITIZER_DIR}"
+    mkdir -p "${SANITIZER_DIR}"     # <--- ensure sanitizer exists
     mkdir -p "${SCRIPT_DIR}/paranoid_mode"
-    mkdir -p "${DOWNLOADS_DIR}"        # Optional, so quick_scan works out of the box
+    mkdir -p "${DOWNLOADS_DIR}"     # Optional, so quick_scan works out of the box
     echo "  + Created: logs, quarantine, modules, sanitizer, paranoid_mode, downloads"
     echo
 
@@ -77,8 +77,9 @@ if [ "$EUID" -ne 0 ]; then
     fi
     echo
 
-    # 4) Create Python3 venv under sanitizer/
-    echo "[P1-4] Creating Python3 venv under sanitizer/..."
+    # 4) Ensure sanitizer dir and create Python3 venv under sanitizer/
+    echo "[P1-4] Ensuring sanitizer dir exists and creating Python3 venv under sanitizer/..."
+    mkdir -p "${SANITIZER_DIR}"                  # <-- ensure again, safe if exists
     python3 -m venv "${VENV_DIR}"
     echo "  + Virtualenv created at: ${VENV_DIR}"
     echo
