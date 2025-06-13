@@ -24,7 +24,7 @@ set -euo pipefail
 
 # All paths relative to repo root (one level above modules)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DOWNLOADS_DIR="${SCRIPT_DIR}/downloads"
+DOWNLOADS_DIR="${HOME}/Downloads"
 LOG_DIR="${SCRIPT_DIR}/logs"
 PDFSEC_DIR="${SCRIPT_DIR}"
 SCAN_LOG="${LOG_DIR}/pdfsec.log"

@@ -17,7 +17,7 @@ VERSION="1.801"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="${SCRIPT_DIR}/logs"
 LOG_FILE="${LOG_DIR}/pdfsec.log"
-DOWNLOADS_DIR="${SCRIPT_DIR}/downloads"
+DOWNLOADS_DIR="${HOME}/Downloads"
 MODULES_DIR="${SCRIPT_DIR}/modules"
 SANITIZER_DIR="${SCRIPT_DIR}/sanitizer"
 BOOTSTR_SCRIPT="${SCRIPT_DIR}/config/bootstrap.sh"
@@ -123,6 +123,7 @@ while true; do
             write_log "scan_menu" "Starting Quick scan"
             echo "      Starting quick scan of all PDFs in ${DOWNLOADS_DIR}…"
             echo
+            echo "      >>>libfreshclam ERRORS fixed with: 1) restarting daemon 2) removing lock<<<" 
 
             # Call quick_scan module  
             "${MODULES_DIR}/quick_scan.sh" 2>&1 | tee -a "${LOG_FILE}"
