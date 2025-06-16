@@ -12,6 +12,7 @@ Flags which files are safe to open and which are not with detailed report saved 
 │
 ├── config
 │   └── bootstrap.sh            # ubuntu prereqs installer 
+│
 ├── logs
 │   ├─ pdfsec.log               # master log 
 │   └─ pcap/                    # PCAP captures (e.g. tcpdump)
@@ -22,15 +23,12 @@ Flags which files are safe to open and which are not with detailed report saved 
 │   ├── pdf-parser.py           # parser wrapper for DidierStevens Github's script 
 │   ├── pdf_sanitizer.py        # Rasterize‐all‐pages and create new PDF  
 │   └── quick_scan.py           # ClamAV, pdfgrep scanner 
+│
 ├── paranoid_mode
 ├── quarantine
 ├── sanitizer
 │   └── venv
-│       ├── bin
-│       ├── include
-│       ├── lib
-│       ├── lib64 -> lib
-│       └── pyvenv.cfg
+│       └── *
 │
 └── scan_menu.sh                # main menu
 ```
@@ -104,11 +102,9 @@ All results and status messages are logged into singe logfile:
 # troubleshooting 
 
 ```bash 
-# freshclaim update issues 
+# freshclaim manual update and lock cleanup 
 sudo systemctl stop clamav-freshclam
 sudo systemctl stop clamav-daemon
 sudo rm -f /var/log/clamav/freshclam.log
 sudo rm -f /var/lib/clamav/*.lock
-
-# 
 ```
