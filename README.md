@@ -1,6 +1,6 @@
-# PDF Security Scanner" 
+# PDF Security Scanner
 
-Ubuntu and Python tool to scan PDF files in `~/Downloads` for potential security risks. 
+Ubuntu / Python tool to scan PDF files in `~/Downloads` for potential security risks. 
 
 Flags which files are safe to open and which are not with detailed report saved to file. 
 
