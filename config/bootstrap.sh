@@ -3,9 +3,7 @@ set -euo pipefail
 # ************************ 
 # PDFSEC bootstrap script 
 # ************************ 
-# version:          1.701
-# update date:      
-# script location:  
+# version:          1.801
 # ************************ 
 
 ############## Configuration ##############
@@ -20,7 +18,7 @@ DOWNLOADS_DIR="${SCRIPT_DIR}/downloads"
 PREREQS_SCRIPT="${SCRIPT_DIR}/config/prereqscheck.sh"
 ############## Configuration-END ##############
 
-# Figure out “real” (non-root) user & home
+# Non root user
 if [ -n "${SUDO_USER:-}" ]; then
   REAL_USER="${SUDO_USER}"
 else
@@ -42,9 +40,9 @@ if [ "$EUID" -ne 0 ]; then
     mkdir -p "${LOG_DIR}"
     mkdir -p "${SCRIPT_DIR}/quarantine"
     mkdir -p "${MODULES_DIR}"
-    mkdir -p "${SANITIZER_DIR}"     # <--- ensure sanitizer exists
+    mkdir -p "${SANITIZER_DIR}"      
     mkdir -p "${SCRIPT_DIR}/paranoid_mode"
-    mkdir -p "${DOWNLOADS_DIR}"     # Optional, so quick_scan works out of the box
+    mkdir -p "${DOWNLOADS_DIR}"      
     echo "  + Created: logs, quarantine, modules, sanitizer, paranoid_mode, downloads"
     echo
 
@@ -79,7 +77,7 @@ if [ "$EUID" -ne 0 ]; then
 
     # 4) Ensure sanitizer dir and create Python3 venv under sanitizer/
     echo "[P1-4] Ensuring sanitizer dir exists and creating Python3 venv under sanitizer/..."
-    mkdir -p "${SANITIZER_DIR}"                  # <-- ensure again, safe if exists
+    mkdir -p "${SANITIZER_DIR}"                   
     python3 -m venv "${VENV_DIR}"
     echo "  + Virtualenv created at: ${VENV_DIR}"
     echo

@@ -14,12 +14,12 @@
 # Output:           Creates a “sanitized” subfolder next to the input file
 #                   and writes sanitized_<original_name>.pdf there.
 # *************************************************************
-
+#
 import sys
 import fitz                     # PyMuPDF
 import img2pdf
 from pathlib import Path
-
+#
 # ─────────────────────────────
 # ARGUMENT VALIDATION    
 # ─────────────────────────────
@@ -40,7 +40,7 @@ sanitized_dir.mkdir(parents=True, exist_ok=True)
 
 output_filename = sanitized_dir / f"sanitized_{input_path.name}"
 
-# OPEN AND RENDER EACH PAGE    
+# Open & Render each page   
 try:
     doc = fitz.open(input_path)
     print(f"Opened '{input_path.name}' ({doc.page_count} pages)...")
@@ -60,7 +60,7 @@ for page_index in range(doc.page_count):
         print(f"Error rendering page {page_index + 1}: {e}")
         sys.exit(1)
 
-# ASSEMBLE BACK 
+# Assemble back  
 try:
     with open(output_filename, "wb") as out_f:
         out_f.write(img2pdf.convert(images))

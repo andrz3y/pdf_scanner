@@ -49,7 +49,6 @@ Download zipped project, run bootstrap script first as root, second time as non 
 
 Run Bash Menu script `scan_menu.sh` which provides following options: 
 
- 
 
 ```bash 
 0) Install/Check Prerequisites                  # quickly checks if prerequstes are installed, creates venv and installs them if necessary 
@@ -60,12 +59,43 @@ Run Bash Menu script `scan_menu.sh` which provides following options:
 5) Paranoid‐mode: open PDF in firejain sandbox  # with live network and OS monitoring + pcap capture and basic analysis 
 ```
 
+**Quick Scan** 
+
+![Alt Text](./pngs/quick_scan.png)
+
+
+
+
+**API caller**
+
+
+### NOTE: 
+
+For API caller an API Key from [virustotal](https://www.virustotal.com) & [opentip.kaspersky.com](https://opentip.kaspersky.com) is required. 
+
+In modules/api_caller.py those two are required: `VT_API_KEY` & `KASPERSKY_API_KEY`
+
+```python
+# API KEYS (replace XXXX with API keys)
+VT_UPLOAD_URL = "https://www.virustotal.com/api/v3/files"
+VT_ANALYSIS_URL = "https://www.virustotal.com/api/v3/analyses"
+VT_API_KEY = "XXXX"
+KASPERSKY_SCAN_URL = "https://opentip.kaspersky.com/api/v1/scan/file"
+KASPERSKY_RESULT_URL = "https://opentip.kaspersky.com/api/v1/getresult/file"
+KASPERSKY_API_KEY = "XXXX"
+```
+
+
+
+![Alt Text](./pngs/API_caller_fullview.png)
+
+
 
 All results and status messages are logged into singe logfile:
 
 `~/pdfsec/logs/pdfsec.log`
 
-Designed to be running on Ubuntu. 
+ 
 
 
 --- 

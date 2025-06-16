@@ -7,7 +7,7 @@
 # *******************************************************************
 # This script uses free API connections to VIRUSTOTAL.com & KASPERSKY
 # *******************************************************************
-
+#
 import os
 import time
 import requests
@@ -15,20 +15,20 @@ from pathlib import Path
 from datetime import datetime
 import json
 import sys
-
-# ─────────── PATHS (RELATIVE TO SCRIPT DIR) ─────────────
+#
+# ─────────── RELATIVE TO THE SCRIPT PATHS ─────────────
 SCRIPT_DIR = Path(__file__).resolve().parent.parent
 LOG_FILE = SCRIPT_DIR / "logs" / "pdfsec.log"
-DOWNLOADS_DIR = SCRIPT_DIR / "downloads"
+DOWNLOADS_DIR = Path.home() / "Downloads"
 SANITIZED_DIR = SCRIPT_DIR / "sanitizer" / "sanitized"
 
-# API KEYS (replace with your real keys or prompt for them)
+# API KEYS (replace XXXX with API keys)
 VT_UPLOAD_URL = "https://www.virustotal.com/api/v3/files"
 VT_ANALYSIS_URL = "https://www.virustotal.com/api/v3/analyses"
-VT_API_KEY = "8b9f7d62fc7adf82d505720b5388ed3e282c009f07130845045331e8dc25204c"
+VT_API_KEY = "XXXX"
 KASPERSKY_SCAN_URL = "https://opentip.kaspersky.com/api/v1/scan/file"
 KASPERSKY_RESULT_URL = "https://opentip.kaspersky.com/api/v1/getresult/file"
-KASPERSKY_API_KEY = "Z/ZQDh6WSy+ujZ7SuYT6rQ=="
+KASPERSKY_API_KEY = "XXXX"
 
 # ────────────── LOGGING ──────────────
 def timestamp():
@@ -183,7 +183,7 @@ def main():
             write_log("api_caller", f"Error during Kaspersky upload/poll: {e}")
             kasp_stats = None
 
-    # Present VirusTotal results (if available)
+    # VirusTotal results  
     if vt_stats is not None:
         harmless   = vt_stats.get("harmless", 0)
         malicious  = vt_stats.get("malicious", 0)
@@ -206,7 +206,7 @@ def main():
         )
         write_log("vt_api", log_msg)
 
-    # Present Kaspersky results (if available)
+    # Kaspersky results 
     if kasp_stats is not None:
         zone = kasp_stats.get("Zone", "<unknown>")
         file_status = kasp_stats.get("FileStatus", "<unknown>")

@@ -3,26 +3,10 @@ set -euo pipefail
 # ************************ 
 # PDFSEC    quick_scan.sh  
 # ************************ 
-# version:          1.701
-# last update:      
-# 1.700_sanitizer working
-# 1.600_menu 0,1,2 working 
-# 1.502_bootstrap with virt venv done 
-# 1.502_modules/quick_scan ubuntu based scan done 
-# ***********************************************
-# quick_scan.sh
-# unified log: ./logs/pdfsec.log
-# ********************************
-# “quick scan” for every PDF in ./downloads:
-#   + ClamAV        detect executables/infected
-#   + pdftotext     search for auto‐trigger keywords like java, 
-#   + exiftool      check “Producer” for suspicious PDF generation tools
-#   + pdfinfo       verify structure (catch corrupted files)
-#   + pev           detect encrypted/password‐protected PDFs
-#   + pdfgrep       look for /JavaScript, /JS, /Launch, /OpenAction,  
-# ******************************************************************
+# version:          1.801
+# ************************ 
 
-# All paths relative to repo root (one level above modules)
+# All paths relative to repo root  
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DOWNLOADS_DIR="${HOME}/Downloads"
 LOG_DIR="${SCRIPT_DIR}/logs"
