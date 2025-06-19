@@ -41,8 +41,8 @@ Flags which files are safe to open and which are not with detailed report saved 
 
 Download zipped project, run bootstrap script first as root, second time as non root user: 
 
-- `sudo bash bootstrap.sh` 
-- `bash bootstrap.sh`
+- `sudo bash config/bootstrap.sh` 
+- `bash config/bootstrap.sh`
 
 
 Run Bash Menu script `scan_menu.sh` which provides following options: 
